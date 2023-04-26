@@ -736,7 +736,7 @@ int get_procinfo(uint64 addr)
   struct pinfo in;
   
   in.ppid = p->parent->pid;
-  in.page_usage = (p->sz / 4096) + 1;
+  in.page_usage = (myproc()->sz + 4096 - 1) / 4096;
   in.syscall_count = p->syscall_count; 
  
   if (copyout(p->pagetable, addr, (char*)&in, sizeof(in)) < 0)
