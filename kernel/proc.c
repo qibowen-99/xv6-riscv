@@ -743,3 +743,10 @@ int get_procinfo(uint64 addr)
     return -1;
   return 0;
 }
+
+void
+sched_statistics(void){}
+
+void
+sched_tickets(uint64 num_tickets){}
+

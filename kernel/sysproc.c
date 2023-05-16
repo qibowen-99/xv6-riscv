@@ -112,3 +112,22 @@ sys_procinfo(void)
 */
   return get_procinfo(in_addr);
 }
+
+uint64 sys_sched_statistics(void)
+{
+  sched_statistics();
+  return 0;
+}
+
+uint64 sys_sched_tickets(void)
+{
+  int num_tickets;
+  argint(0, &num_tickets);
+
+  if(num_tickets <= 0) { 
+    return -1;
+  }
+  
+	sched_tickets(num_tickets);
+	return 0;
+}

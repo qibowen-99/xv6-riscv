@@ -109,6 +109,9 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 int             print_info(int); //infomation
 int             get_procinfo(uint64);
+void            sched_statistics(void);
+void            sched_tickets(uint64);
+
 // swtch.S
 void            swtch(struct context*, struct context*);
 
