@@ -38,5 +38,5 @@ entry("sleep");
 entry("uptime");
 entry("sysinfo"); # info syscall for user
 entry("procinfo");
-entry("sched_statistics")
-entry("sched_tickets")
+entry("sched_statistics");
+entry("sched_tickets");
