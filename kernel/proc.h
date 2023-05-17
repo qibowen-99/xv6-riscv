@@ -106,6 +106,8 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   int syscall_count;
+  uint64 tickets;
+  uint64 tick;
 };
 
 struct pinfo {

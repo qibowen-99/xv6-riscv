@@ -730,6 +730,7 @@ int print_info(int param){ //the functiuon to calculate system infomation
   }
 }
 
+
 int get_procinfo(uint64 addr)
 {
   struct proc *p = myproc();
@@ -744,9 +745,26 @@ int get_procinfo(uint64 addr)
   return 0;
 }
 
-void
-sched_statistics(void){}
+int numTicks = 0;
+int ticketSum = 100;
 
 void
-sched_tickets(uint64 num_tickets){}
+sched_statistics(void){
+  struct proc *p = myproc();
+  uint tick = p->tick;
+  uint tickets = p->tickets;
+  if(tick != 0){
+    printf("%d tickets finish after %d ticks\n", tickets, tick);
+  }
+  printf("Total ticks have written: %d\n", numTicks);
+}
+
+void
+sched_tickets(uint64 num_tickets){
+  struct proc *p = myproc();
+	acquire(&p->lock);
+	p->tickets = num_tickets;
+  
+	release(&p->lock);
+}
 
