@@ -434,6 +434,16 @@ wait(uint64 addr)
   }
 }
 
+// pseudo random generator (https://stackoverflow.com/a/7603688)
+unsigned short lfsr = 0xACE1u;
+unsigned short bit;
+
+unsigned short rand()
+{
+  bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1;
+  return lfsr = (lfsr >> 1) | (bit << 15);
+}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -447,13 +457,84 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   
+  // Lottery Implementation
+  //
+  // Unsigned short is 0->65535
+  unsigned short totalTickets = 0
+
+  // by doing mod total_tickets, it fits into the bounds of the lottery
+  unsigned short randnum, ticketsSoFar;
   c->proc = 0;
+
+  unsigned short K = 10000;
+  unsigned short stride;
+  
+  
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
+    totalTickets = 11111;
+    winningTicket = rand() % totalTickets;
+    ticketsSoFar = 0;
 
+#if defined(LOTTERY)
     for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
+      	acquire(&p->lock);
+	if(p->state == RUNNABLE){
+      	  ticketsSoFar += p->tickets;
+      	  if(ticketsSoFar >= winningTicket)
+      	  {
+	    p->state = RUNNING;
+	    c->proc = p;
+	    swtch(&c->context,&p->context);
+
+
+	    c->proc = 0;
+	    release(&p->lock);
+	    break; //restart the cycle to do a new lottery
+      	  }
+        }
+	release(&p->lock);
+    }
+   #elif defined(STRIDE)
+    //very slow implementation but works technically
+    
+    for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if(p->state == RUNNABLE){
+             if (c->proc) {
+		if (p->pass < c->proc->pass)
+		{
+			c->proc = p;
+		}
+	      }
+	       else{
+			c->proc = p;
+	       }
+		p->state = RUNNING;
+		stride = K / p->tickets;
+		p->pass += stride;
+	      	c->proc = p;
+		switch(&c->context,*p->context);
+                
+		c->proc = 0;	
+	 }
+	 release(&p->lock);
+    }
+    acquire(&c->proc->lock);
+    c->proc->state = RUNNING;
+// update process pass and such
+    stride = K / p->tickets;
+    c->proc->pass += stride;
+    switch(&c->context,*c->context);
+
+    // do stuff then come back
+    c->proc = 0;
+
+#else
+    for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+      // default
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
@@ -461,13 +542,15 @@ scheduler(void)
         p->state = RUNNING;
         c->proc = p;
         swtch(&c->context, &p->context);
-
+        
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
       }
       release(&p->lock);
     }
+#endif
+    
   }
 }
 
