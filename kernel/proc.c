@@ -745,8 +745,8 @@ int get_procinfo(uint64 addr)
   return 0;
 }
 
-int numTicks = 0;
-int ticketSum = 100;
+int numTicks;
+int ticketSum;
 
 void
 sched_statistics(void){
@@ -768,3 +768,14 @@ sched_tickets(uint64 num_tickets){
 	release(&p->lock);
 }
 
+total_tickets(void){
+  struct proc *p;
+  uint total = 0;
+
+  for(p = proc; p < &proc[NPROC]; p++){ 
+    total += p->tickets; // 
+    release(&p->lock); // 
+  }
+
+  printf("Total tickets: %d\n", total);
+}
