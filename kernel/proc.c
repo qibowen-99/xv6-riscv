@@ -126,6 +126,9 @@ found:
   p->state = USED;
   p->syscall_count = 0;
   // Allocate a trapframe page.
+  //
+  p->tickets = 10;
+  p->pass = 0;
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
     release(&p->lock);
@@ -457,27 +460,29 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   
-  // Lottery Implementation
-  //
-  // Unsigned short is 0->65535
-  unsigned short totalTickets = 0
-
-  // by doing mod total_tickets, it fits into the bounds of the lottery
-  unsigned short randnum, ticketsSoFar;
   c->proc = 0;
 
-  unsigned short K = 10000;
-  unsigned short stride;
+ 
   
   
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-    totalTickets = 11111;
+
+#if defined (LOTTERY)
+    unsigned short winningTicket, totalTickets, ticketsSoFar;
+    totalTickets = 0;
+    // find total tickets
+    for(p = proc; p < &proc[NPROC]; p++) {
+	acquire(&p->lock);
+	if (p->state == RUNNABLE){
+		totalTickets += p->tickets;
+	}
+	release(&p->lock);
+    }
     winningTicket = rand() % totalTickets;
     ticketsSoFar = 0;
 
-#if defined(LOTTERY)
     for(p = proc; p < &proc[NPROC]; p++) {
       	acquire(&p->lock);
 	if(p->state == RUNNABLE){
@@ -498,38 +503,39 @@ scheduler(void)
     }
    #elif defined(STRIDE)
     //very slow implementation but works technically
-    
+    unsigned short K = 10000;
+    unsigned short stride;
+    struct proc *lowpassproc = proc;
     for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
+	//printf("lpp is %d\n",lowpassproc);
         if(p->state == RUNNABLE){
-             if (c->proc) {
-		if (p->pass < c->proc->pass)
+             if (lowpassproc) {
+		if (p->pass <= lowpassproc->pass)
 		{
-			c->proc = p;
+			lowpassproc = p;
 		}
 	      }
 	       else{
-			c->proc = p;
-	       }
-		p->state = RUNNING;
-		stride = K / p->tickets;
-		p->pass += stride;
-	      	c->proc = p;
-		switch(&c->context,*p->context);
-                
-		c->proc = 0;	
+			lowpassproc = p;
+	      }
 	 }
 	 release(&p->lock);
     }
-    acquire(&c->proc->lock);
-    c->proc->state = RUNNING;
+    //printf("lpp is %d\n",&lowpassproc);
+    acquire(&lowpassproc->lock);
+    if (lowpassproc->state == RUNNABLE) {
+    lowpassproc->state = RUNNING;
 // update process pass and such
-    stride = K / p->tickets;
-    c->proc->pass += stride;
-    switch(&c->context,*c->context);
-
+    stride = K / lowpassproc->tickets;
+    lowpassproc->pass += stride;
+    c->proc = lowpassproc;
+    swtch(&c->context,&lowpassproc->context);
+   
     // do stuff then come back
     c->proc = 0;
+    }
+    release(&lowpassproc->lock);
 
 #else
     for(p = proc; p < &proc[NPROC]; p++) {
