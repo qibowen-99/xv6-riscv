@@ -768,6 +768,7 @@ sched_tickets(uint64 num_tickets){
 	release(&p->lock);
 }
 
+void
 total_tickets(void){
   struct proc *p;
   uint total = 0;
