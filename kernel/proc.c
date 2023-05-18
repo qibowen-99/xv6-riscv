@@ -836,13 +836,14 @@ int ticketSum;
 
 void
 sched_statistics(void){
-  struct proc *p = myproc();
-  uint tick = p->tick;
-  uint tickets = p->tickets;
-  if(tick != 0){
-    printf("%d tickets finish after %d ticks\n", tickets, tick);
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++){ 
+    int pid = p->pid;
+    char *name = p->name;
+    uint tick = p->tick;
+    uint tickets = p->tickets;
+    printf("%d, %s, tickets: %d, ticks: %d\n", pid, name, tickets, tick);
   }
-  printf("tickets: %d, ticks: %d\n", tickets, ticks);
 }
 
 void
