@@ -474,32 +474,29 @@ scheduler(void)
     totalTickets = 0;
     // find total tickets
     for(p = proc; p < &proc[NPROC]; p++) {
-	acquire(&p->lock);
-	if (p->state == RUNNABLE){
-		totalTickets += p->tickets;
-	}
-	release(&p->lock);
+	      acquire(&p->lock);
+	      if (p->state == RUNNABLE){
+		        totalTickets += p->tickets;
+	      }
+	      release(&p->lock);
     }
     winningTicket = rand() % totalTickets;
     ticketsSoFar = 0;
 
     for(p = proc; p < &proc[NPROC]; p++) {
       	acquire(&p->lock);
-	if(p->state == RUNNABLE){
-      	  ticketsSoFar += p->tickets;
-      	  if(ticketsSoFar >= winningTicket)
-      	  {
-	    p->state = RUNNING;
-	    c->proc = p;
-	    swtch(&c->context,&p->context);
-
-
-	    c->proc = 0;
-	    release(&p->lock);
-	    break; //restart the cycle to do a new lottery
-      	  }
-        }
-	release(&p->lock);
+	      if(p->state == RUNNABLE){
+      	    ticketsSoFar += p->tickets;
+      	    if(ticketsSoFar >= winningTicket) {
+	              p->state = RUNNING;
+	              c->proc = p;
+	              swtch(&c->context,&p->context);
+                c->proc = 0;
+	              release(&p->lock);
+	              break; //restart the cycle to do a new lottery
+      	    }
+       }
+	     release(&p->lock);
     }
    #elif defined(STRIDE)
     //very slow implementation but works technically
