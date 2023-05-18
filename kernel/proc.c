@@ -842,7 +842,9 @@ sched_statistics(void){
     char *name = p->name;
     uint tick = p->tick;
     uint tickets = p->tickets;
-    printf("%d, %s, tickets: %d, ticks: %d\n", pid, name, tickets, tick);
+    if (pid != 0){
+      printf("%d, %s, tickets: %d, ticks: %d\n", pid, name, tickets, tick);
+    }
   }
 }
 
