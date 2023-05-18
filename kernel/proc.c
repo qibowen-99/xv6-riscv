@@ -845,7 +845,7 @@ sched_statistics(void){
   if(tick != 0){
     printf("%d tickets finish after %d ticks\n", tickets, tick);
   }
-  printf("Total ticks have written: %d\n", numTicks);
+  printf("tickets: %d, ticks: %d\n", tickets, ticks);
 }
 
 void
