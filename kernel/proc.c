@@ -491,6 +491,7 @@ scheduler(void)
 	              p->state = RUNNING;
 	              c->proc = p;
 	              swtch(&c->context,&p->context);
+                p->tick ++;
                 c->proc = 0;
 	              release(&p->lock);
 	              break; //restart the cycle to do a new lottery
@@ -527,6 +528,7 @@ scheduler(void)
     stride = K / lowpassproc->tickets;
     lowpassproc->pass += stride;
     c->proc = lowpassproc;
+    lowpassproc->tick ++;
     swtch(&c->context,&lowpassproc->context);
    
     // do stuff then come back
