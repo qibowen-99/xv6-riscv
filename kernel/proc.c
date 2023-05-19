@@ -503,38 +503,37 @@ scheduler(void)
     //very slow implementation but works technically
     unsigned short K = 10000;
     unsigned short stride;
-    struct proc *lowpassproc = proc;
+    struct proc *lowpassproc = 0;
+    unsigned short minPass = 65535; // Use maximum value of unsigned short to initialize.
+    
     for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
-	//printf("lpp is %d\n",lowpassproc);
         if(p->state == RUNNABLE){
-             if (lowpassproc) {
-		if (p->pass <= lowpassproc->pass)
-		{
-			lowpassproc = p;
-		}
-	      }
-	       else{
-			lowpassproc = p;
-	      }
-	 }
-	 release(&p->lock);
+            if (!lowpassproc || p->pass < minPass) { // Find the process with the smallest pass.
+                minPass = p->pass;
+                lowpassproc = p;
+            }
+        }
+        release(&p->lock);
     }
-    //printf("lpp is %d\n",&lowpassproc);
-    acquire(&lowpassproc->lock);
-    if (lowpassproc->state == RUNNABLE) {
-    lowpassproc->state = RUNNING;
-// update process pass and such
-    stride = K / lowpassproc->tickets;
-    lowpassproc->pass += stride;
-    c->proc = lowpassproc;
-    lowpassproc->tick ++;
-    swtch(&c->context,&lowpassproc->context);
-   
-    // do stuff then come back
-    c->proc = 0;
+
+    if(lowpassproc) {
+        acquire(&lowpassproc->lock);
+        if (lowpassproc->state == RUNNABLE) {
+            lowpassproc->state = RUNNING;
+            // update process pass and such
+            stride = K / lowpassproc->tickets;
+            lowpassproc->pass += stride;
+            c->proc = lowpassproc;
+            lowpassproc->tick ++;
+            swtch(&c->context,&lowpassproc->context);
+
+            // do stuff then come back
+            c->proc = 0;
+        }
+        release(&lowpassproc->lock);
     }
-    release(&lowpassproc->lock);
+
 
 #else
     for(p = proc; p < &proc[NPROC]; p++) {
