@@ -131,3 +131,14 @@ uint64 sys_sched_tickets(void)
 	sched_tickets(num_tickets);
 	return 0;
 }
+
+uint64 sys_clone(void)
+{
+  void* stack;
+  argaddr(0,(uint64*)&stack);
+
+  if (stack == 0)
+    return -1;
+  clone(stack);
+  return 0;
+}

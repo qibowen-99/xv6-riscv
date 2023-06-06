@@ -109,6 +109,9 @@ struct proc {
   int syscall_count;
   uint64 tickets;
   uint64 tick;
+
+  uint64 thread_id;
+  uint64 child_count;
 };
 
 struct pinfo {

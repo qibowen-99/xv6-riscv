@@ -111,6 +111,7 @@ int             print_info(int); //infomation
 int             get_procinfo(uint64);
 void            sched_statistics(void);
 void            sched_tickets(uint64);
+int		clone(void*);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
