@@ -1,26 +1,30 @@
 #include "thread.h"
+#include <stdlib.h>
 #define PGSIZE 4096
 
+int thread_create(void *(start_routine)(void*), void *arg) {
+    thread_t *t = malloc(sizeof(thread_t));
+    if (t == NULL)
+        return -1;
 
-static void thread_start(void* (*start_routine)(void*), void *arg){
-    start_routine(arg);
-    exit(0);
-}
-
-int thread_create(thread_t *t, void *(start_routine)(void*), void *arg){
     t->start_routine = start_routine;
     t->arg = arg;
     t->stack = malloc(PGSIZE);
-    if(t->stack == 0)
-        return -1;
-
-    int tid = clone(thread_start, t->stack+PGSIZE, t);
-    if(tid < 0){
-        free(t->stack);
+    if(t->stack == NULL) {
+        free(t);
         return -1;
     }
+
+    int tid = clone(t);
+    if(tid < 0) {
+        free(t->stack);
+        free(t);
+        return -1;
+    }
+
     return tid;
 }
+
 
 void lock_init(lock_t* lock){
     lock->locked = 0;

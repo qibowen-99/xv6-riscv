@@ -1,0 +1,2 @@
+int
+clone(void *stack);
