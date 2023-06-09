@@ -2,23 +2,25 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
-#include <stdlib.h>
+//#include <stdlib.h>
 #define PGSIZE 4096
 
 int thread_create(void *(start_routine)(void*), void *arg) {
     thread_t *t = malloc(sizeof(thread_t));
-    if (t == NULL)
+    if (t == 0)
         return -1;
-
+    printf("start routine loc: %d\n",(uint64)start_routine);
     t->start_routine = start_routine;
     t->arg = arg;
     t->stack = malloc(PGSIZE);
-    if(t->stack == NULL) {
+    if(t->stack == 0) {
         free(t);
         return -1;
     }
 
+    printf("test\n");
     int tid = clone(t);
+    printf("End\n");
     if(tid < 0) {
         free(t->stack);
         free(t);

@@ -334,12 +334,44 @@ fork(void)
   return pid;
 }
 
+pagetable_t
+thread_proc_pagetable(struct proc *p)
+{
+  pagetable_t pagetable;
+
+  // An empty page table.
+  pagetable = p->pagetable; //uvmcreate();
+  if(pagetable == 0)
+    return 0;
+
+  // map the trampoline code (for system call return)
+  // at the highest user virtual address.
+  // only the supervisor uses it, on the way
+  // to/from user space, so not PTE_U.
+  /*if(mappages(pagetable, TRAMPOLINE, PGSIZE,
+              (uint64)trampoline, PTE_R | PTE_X) < 0){
+    uvmfree(pagetable, 0);
+    return 0;
+  }
+*/
+  // map the trapframe page just below the trampoline page, for
+  // trampoline.S.
+  if(mappages(pagetable, TRAPFRAME-(PGSIZE*p->thread_id), PGSIZE,
+              (uint64)(p->trapframe), PTE_R | PTE_W) < 0){
+    uvmunmap(pagetable, TRAMPOLINE, 1, 0);
+    uvmfree(pagetable, 0);
+    return 0;
+  }
+
+  return pagetable;
+}
+
 static struct proc*
-allocproc_thread(void)
+allocproc_thread(void* stack)
 {
   struct proc *p;
 
-  for(p = proc; p < &proc[NPROC]; p++) {
+  for(p = proc; p < &proc[NPROC]; p++){
     acquire(&p->lock);
     if(p->state == UNUSED) {
       goto found;
@@ -357,22 +389,22 @@ found:
   //
   p->tickets = 10;
   p->pass = 0;
-
+  //p->trapframe->sp = (uint64)stack;
 
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
     release(&p->lock);
     return 0;
   }
-
+  p->trapframe->sp = (uint64)stack;
   // An empty user page table.
-/*  p->pagetable = proc_pagetable(p);
+  p->pagetable = thread_proc_pagetable(p);
   if(p->pagetable == 0){
     freeproc(p);
     release(&p->lock);
     return 0;
   }
-*/
+
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
@@ -385,22 +417,28 @@ found:
 int
 clone(void *stack)
 {
+//	printf("stack loc: %d\n",stack);
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
+  
 
   // Allocate process.
-  if((np = allocproc_thread()) == 0){
+  if((np = allocproc_thread(stack)) == 0){
     return -1;
   }
 
   if (stack == 0)
     return -1;
-		  
-  // Copy user memory from parent to child.
+  		  
+
   np->pagetable = p->pagetable;
   p->child_count += 1;
-  np->thread_id = p->child_count; //should be +1 from each child
+  np->thread_id = p->child_count;
+  // Copy user memory from parent to child.
+  //np->pagetable = p->pagetable;
+  //p->child_count += 1;
+  //np->thread_id = p->child_count; //should be +1 from each child
   
   //if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
   //  freeproc(np);
@@ -412,7 +450,7 @@ clone(void *stack)
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
   np->trapframe->sp = (uint64)stack; //specify starting address
-
+	
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
