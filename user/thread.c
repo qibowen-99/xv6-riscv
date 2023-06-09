@@ -36,8 +36,7 @@ void lock_init(lock_t* lock){
 }
 
 void lock_acquire(lock_t* lock){
-    while(__sync_lock_test_and_set(&lock->locked, 1) != 0)
-        ;
+    while(__sync_lock_test_and_set(&lock->locked, 1) != 0) {}; 
 }
 
 void lock_release(lock_t* lock){
