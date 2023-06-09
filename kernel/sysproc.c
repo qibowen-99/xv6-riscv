@@ -139,6 +139,6 @@ uint64 sys_clone(void)
 
   if (stack == 0)
     return -1;
-  clone(stack);
-  return 0;
+  return clone(stack);
+ 
 }

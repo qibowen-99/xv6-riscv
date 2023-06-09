@@ -112,6 +112,7 @@ struct proc {
 
   uint64 thread_id;
   uint64 child_count;
+  
 };
 
 struct pinfo {
